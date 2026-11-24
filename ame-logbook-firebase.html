@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<!--
+ SETUP (about 10 minutes, free tier is enough):
+ 1. console.firebase.google.com > Add project.
+ 2. Build > Authentication > Get started > enable "Email/Password".
+ 3. Build > Firestore Database > Create database, then paste firestore.rules into the Rules tab and Publish.
+ 4. Project settings > Your apps > add a Web app, copy its config into the "cfg" object near the bottom of this file.
+ 5. Build > Hosting (or any web host) to publish this file. Authentication > Settings > Authorized domains must list your site's domain.
+ Usernames are turned into a private fake email (username@ame-logbook.app) so no real email is needed. There is no password reset.
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>AME Apprentice Logbook Tracker</title>
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --fg: #14181f;
+            --mut: #5d6675;
+            --card: #fff;
+            --bd: #dde1e8;
+            --ac: #c8102e;
+            --ok: #1b7f4b;
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            color-scheme: light
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root:not([data-theme="light"]) {
+                --bg: #101319;
+                --fg: #e8ebf0;
+                --mut: #98a2b3;
+                --card: #181c24;
+                --bd: #2a303b;
+                --ac: #ff5a6e;
+                --ok: #4cc38a;
+                color-scheme: dark
+            }
+        }
+
+        :root[data-theme="dark"] {
+            --bg: #101319;
+            --fg: #e8ebf0;
+            --mut: #98a2b3;
+            --card: #181c24;
+            --bd: #2a303b;
+            --ac: #ff5a6e;
+            --ok: #4cc38a;
+            color-scheme: dark
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif
+        }
+
+        main {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 16px
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 2px
+        }
+
+        .sub {
+            color: var(--mut);
+            font-size: 13px;
+            margin: 0 0 12px
+        }
+
+        .bar {
+            height: 8px;
+            background: var(--bd);
+            border-radius: 6px;
+            overflow: hidden
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            background: var(--ok)
+        }
+
+        .top {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0 0
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            font: inherit;
+            color: inherit
+        }
+
+        input,
+        select,
+        textarea {
+            background: var(--bg);
+            border: 1px solid var(--bd);
+            border-radius: 8px;
+            padding: 8px;
+            min-width: 0
+        }
+
+        .row input[type=search] {
+            flex: 1 1 180px
+        }
+
+        button {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer
+        }
+
+        button.p {
+            background: var(--ac);
+            border-color: var(--ac);
+            color: #fff
+        }
+
+        .ch {
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            overflow: hidden
+        }
+
+        .ch>button {
+            width: 100%;
+            border: 0;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+            padding: 12px 14px;
+            background: none
+        }
+
+        .ch>button b {
+            flex: 1
+        }
+
+        .cnt {
+            color: var(--mut);
+            font-size: 13px;
+            white-space: nowrap
+        }
+
+        .mini {
+            width: 48px
+        }
+
+        .t {
+            border-top: 1px solid var(--bd)
+        }
+
+        .t>button {
+            width: 100%;
+            border: 0;
+            border-radius: 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            text-align: left;
+            background: none;
+            padding: 10px 14px
+        }
+
+        .dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--bd);
+            flex: none;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            color: #fff
+        }
+
+        .done .dot {
+            background: var(--ok);
+            border-color: var(--ok)
+        }
+
+        .t span.n {
+            flex: 1
+        }
+
+        .badge {
+            background: var(--bg);
+            border: 1px solid var(--bd);
+            border-radius: 10px;
+            padding: 0 8px;
+            font-size: 12px;
+            color: var(--mut)
+        }
+
+        .panel {
+            padding: 4px 14px 14px;
+            background: var(--bg)
+        }
+
+        .ent {
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--bd);
+            font-size: 13px
+        }
+
+        .ent small {
+            color: var(--mut);
+            display: block
+        }
+
+        .form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px
+        }
+
+        .form .w {
+            grid-column: 1/-1
+        }
+
+        .form label {
+            font-size: 12px;
+            color: var(--mut);
+            display: flex;
+            flex-direction: column;
+            gap: 3px
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            font: 12px monospace
+        }
+
+        .note {
+            font-size: 12px;
+            color: var(--mut);
+            margin-top: 14px
+        }
+
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin: 0 0 12px
+        }
+
+        .tabs button.on {
+            background: var(--ac);
+            border-color: var(--ac);
+            color: #fff
+        }
+
+        h2.cat {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--mut);
+            margin: 16px 2px 8px;
+            display: flex;
+            justify-content: space-between
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin: 12px 0
+        }
+
+        .m {
+            background: var(--bg);
+            border: 1px solid var(--bd);
+            border-radius: 10px;
+            padding: 10px
+        }
+
+        .m .mh {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 6px
+        }
+
+        .m small {
+            color: var(--mut);
+            font-size: 12px
+        }
+
+        label.ck {
+            flex-direction: row;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--fg)
+        }
+
+        .lb {
+            font-size: 13px;
+            color: var(--mut);
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        details {
+            margin-top: 12px
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 600
+        }
+
+        button {
+            min-height: 40px
+        }
+
+        .authbox {
+            max-width: 360px;
+            margin: 12vh auto;
+            padding: 20px;
+            background: var(--card);
+            border: 1px solid var(--bd);
+            border-radius: 12px
+        }
+
+        .authbox input {
+            width: 100%;
+            margin: 6px 0
+        }
+
+        #am {
+            color: var(--ac);
+            min-height: 20px;
+            font-size: 13px;
+            margin: 6px 0
+        }
+
+        .hide {
+            display: none
+        }
+    </style>
+</head>
+
+<body>
+    <div id="auth" class="authbox">
+        <h1>AME Logbook</h1>
+        <p class="sub">Sign in to open your private logbook. No email needed.</p><input id="au" placeholder="Username"
+            autocomplete="username" autocapitalize="none" autocorrect="off"><input id="ap" type="password"
+            placeholder="Password (6+ characters)" autocomplete="current-password">
+        <div class="row"><button id="ag" class="p">Sign in</button><button id="ac">Create account</button></div>
+        <p id="am"></p>
+        <p class="note">There is no password reset, so remember your password. You can also download a copy of your
+            logbook from the Save / restore button.</p>
+    </div>
+    <main id="app" class="hide">
+        <h1>AME Apprentice Logbook Tracker</h1>
+        <div class="row" style="margin:0 0 6px;align-items:center;justify-content:space-between"><span class="sub"
+                style="margin:0">Signed in as <b id="who"></b> · <span id="sync"></span></span><button id="so">Sign
+                out</button></div>
+        <p class="sub">Transport Canada AME task log · ATA chapters + “S” licence tasks</p>
+        <p class="sub">🔒 Private: your logbook is saved to your own account, so you can sign in from any device.</p>
+        <div class="top"><b>Licence dashboard</b>
+            <div class="row"><label class="lb">Working toward <select id="tg">
+                        <option>M1</option>
+                        <option>M2</option>
+                        <option>E</option>
+                        <option>S</option>
+                    </select></label><label class="lb">Basic training credit (months) <input id="cr" type="number"
+                        min="0" max="36" style="width:70px"></label><label class="lb ck"><input type="checkbox" id="ab">
+                    TC-approved basic training completed</label></div>
+            <div id="dm"></div>
+            <details>
+                <summary>Log experience hours</summary>
+                <div class="form"><label>Start date<input type="date" id="hd"></label><label>End date<input type="date"
+                            id="he"></label><label>Typical hours/week<input type="number" id="hw" min="1" max="80"
+                            value="40"></label><label>Hours (auto, editable)<input type="number" id="hh" min="0"
+                            step="0.5"></label><label class="ck"><input type="checkbox" id="hs"> Specialty (work on your
+                        rating’s systems)</label><label class="ck"><input type="checkbox" id="hc"> Civil (non-military
+                        aircraft)</label><label class="w">Employer / notes<input id="hn"></label><button class="p w"
+                        id="ha">Add hours</button></div>
+                <div id="hl"></div>
+            </details>
+        </div>
+        <div class="tabs"><button data-v="all" class="on">All tasks</button><button data-v="M">M1/M2
+                tasks</button><button data-v="S">S tasks</button></div>
+        <div class="top">
+            <div style="display:flex;justify-content:space-between;font-size:14px"><b>Task progress (this view)</b><span
+                    id="tot"></span></div>
+            <div class="bar" style="margin-top:6px"><i id="pb"></i></div>
+            <div class="row">
+                <input type="search" id="q" placeholder="Search tasks or chapters…">
+                <select id="f">
+                    <option value="all">All tasks</option>
+                    <option value="no">Not yet logged</option>
+                    <option value="yes">Logged</option>
+                </select>
+                <button id="bk">💾 Save / restore</button>
+            </div>
+            <div id="bkp" class="hide" style="margin-top:10px">
+                <textarea id="ta" class="hide" aria-label="Logbook text"></textarea>
+                <p class="note" style="margin:0 0 8px">Your logbook saves to your account automatically. You can also
+                    download a copy for your own records.</p>
+                <div class="row"><button id="sv" class="p">Download my logbook</button><label class="lb">Load a saved
+                        logbook <input type="file" id="lf"
+                            accept=".json,.txt,application/json,text/plain"></label><button id="cp">Copy / paste
+                        instead</button><button id="im" class="hide">Import pasted text</button></div>
+                <p class="note" style="margin-top:6px">The downloaded file is plain text containing only your own
+                    entries: no programs or macros. Keep it somewhere safe, like your email or cloud storage.</p>
+            </div>
+        </div>
+        <div id="list"></div>
+        <p class="note">Your entries are stored only in this browser. This is a personal tracking aid, not an official
+            record: your signed, employer‑verified logbook and Transport Canada’s requirements always take precedence.
+            Task lists follow the logbook pages; confirm against your current logbook version. Requirements shown
+            (summarized from Transport Canada, CAR 403 / AWM 566): age 21, approved basic training, M/E 48 months
+            experience (12 specialty, 6 civil), S 36 months (24 specialty, 6 civil), plus technical and regulatory
+            exams. Approved training programs typically credit part of the total experience (often 18 months), so enter
+            your college’s credit above. Check tc.canada.ca for current rules.</p>
+    </main>
+    <script>
+        const D = `05|Time Limits / Maintenance Checks|100 hour check (general aviation a/c)|Involvement in A, B or C check (transport category)|Review records for compliance with Airworthiness directives|Review records for compliance with component life limits|Inspection following heavy landing|Inspection following lightning strike
+06|Dimensions and Areas|Locate components by station number|Perform symmetry check
+07|Lifting and Shoring|Jack aircraft nose or tail wheel|Jack complete aircraft|Sling or trestle major component
+08|Leveling / Weighing|Level aircraft|Weigh aircraft|Prepare weight and balance amendment|Check aircraft against equipment list
+09|Towing and Taxiing|Tow aircraft|Taxi aircraft
+10|Parking and Mooring|Tie down aircraft|Park, secure and cover aircraft|Position aircraft in dock|Secure rotor blades
+11|Placards and Markings|Check aircraft for correct placards|Check aircraft for correct markings
+12|Servicing|Refuel aircraft|Defuel aircraft|Check tire pressure|Check oil level|Check hydraulic fluid level|Check accumulator pressure|Charge pneumatic system|Grease aircraft|Connect ground power|Service toilet/water system|Perform pre-flight check
+18|Vibration and Noise Analysis|Analyze helicopter vibration problem|Analyze noise spectrum
+21|Air Conditioning|Replenish vapour system|Replace combustion heater|Replace outflow valve|Replace vapour cycle unit|Replace air cycle unit|Replace cabin blower|Replace heat exchanger|Replace pressurization controller|Clean outflow valves|Check operation of air conditioning/heating system|Check operation of pressurization system|Troubleshoot faulty system
+22|Auto Flight|Install servos|Rig bridle cables|Replace controller|Replace amplifier|Check operation of auto-pilot|Check operation of auto-throttle|Check operation of yaw damper|Check and adjust servo clutch|Perform auto-pilot gain adjustments|Perform mach trim functional check|Troubleshoot faulty system
+23|Communications|Replace VHF com unit|Replace HF com unit|Replace existing antenna|Install new antenna|Replace static discharge wicks|Check operation of radios|Perform antenna VSWR check|Perform selcal operational check|Perform operational check of passenger address system|Functionally check audio integrating system|Repair co-axial cable|Troubleshoot faulty system
+24|Electrical Power|Charge lead/acid battery|Charge ni-cad battery|Check battery capacity|Replace cells|Deep-cycle ni-cad battery|Replace generator|Replace switches|Replace circuit breakers|Adjust voltage regulator|Amend electrical load analysis report|Repair/replace electrical feeder cable|Troubleshoot faulty system
+25|Equipment / Furnishings|Replace carpets|Replace crew seats|Replace passenger seats|Check inertia reels|Check seats/belts for security|Check emergency equipment|Check ELT for compliance with regulations|Repair toilet waste container|Repair upholstery|Change cabin configuration
+26|Fire Protection|Check fire bottle contents|Check operation of warning system|Check cabin fire extinguisher contents|Check lavatory smoke detector system|Install new fire bottle|Replace fire bottle squib|Troubleshoot faulty system
+27|Flight Controls|Replace horizontal stabilizer|Replace elevator|Replace aileron|Replace rudder|Replace trim tabs|Install control cable and fittings|Replace flaps|Replace powered flying control unit|Replace flap actuator|Adjust trim tab|Adjust control cable tension|Check control range and sense of movement|Check for correct assembly and locking|Troubleshoot faulty system
+28|Fuel|Replace booster pump|Replace fuel selector|Replace fuel tank cells|Check filters|Flow check system|Check calibration of fuel quantity gauges|Check operation feed/selectors|Troubleshoot faulty system
+29|Hydraulics|Replace engine driven pump|Replace standby pump|Replace accumulator|Check operation of shut-off valve|Check filters|Check indicating systems|Perform functional checks|Troubleshoot faulty system
+30|Ice and Rain Protection|Replace fluid tank|Replace pump|Replace timer|Replace distributor|Install wiper motor|Repair de-icing boot|Adjust brush block|Check operation of systems|Troubleshoot faulty system
+31|Indicating / Recording Systems|Replace flight data recorder|Replace cockpit voice recorder|Replace clock|Replace panel vibrator|Replace master caution unit|Perform FDR calibration/correlation check|Perform FDR data retrieval|Troubleshoot faulty system
+32|Landing Gear|Build up wheel|Replace main wheel|Replace nose wheel|Replace shimmy damper|Rig nose wheel steering|Replace shock strut seals|Replace brake unit|Replace brake control valve|Bleed brakes|Test antiskid unit|Test gear retraction|Change bungees|Install floats|Install skis|Adjust micro switches|Charge struts|Troubleshoot faulty system
+33|Lights|Repair/replace rotating beacon|Repair/replace landing lights|Repair/replace navigation lights|Repair/replace interior lights|Repair/replace emergency lighting system|Perform emergency lighting system check|Troubleshoot faulty system
+34|Navigation|Calibrate magnetic direction indicator|Replace airspeed indicator|Replace altimeter|Replace air data computer|Replace VOR unit|Replace ADI|Replace HSI|Check pilot static system for leaks|Check operation of directional gyro|Functional check weather radar|Functional check doppler|Functional check TCAS|Functional check DME|Functional check ATC transponder|Functional check flight director system|Functional check inertial nav system|Complete quadrantal error correction of ADF system|Update flight management system data base|Check calibration of altimeter system|Check calibration of pressure altitude reporting system|Troubleshoot faulty system
+35|Oxygen|Inspect on board oxygen equipment|Purge & recharge oxygen system|Replace regulator|Replace oxygen generator|Test crew oxygen system|Perform auto oxygen system deployment check|Troubleshoot faulty system
+36|Pneumatic Systems|Replace filter|Replace compressor|Recharge dessicator|Adjust regulator|Check for leaks|Check indicating system|Troubleshoot faulty system
+37|Vacuum Systems|Replace vacuum pump|Check/replace filters|Adjust regulator|Check indication & warning system|Troubleshoot faulty system
+38|Water / Waste|Replace water pump|Replace faucet|Replace toilet pump|Troubleshoot faulty system
+45|Central Maintenance System|Retrieve data from CMU|Replace CMU|Perform BITE check|Troubleshoot faulty system
+49|Airborne Auxiliary Power|Install APU|Inspect hot section|Engine controls|Engine fuel & control|Ignition & starting|Oil system|Indicating system|Troubleshoot faulty system
+51|Structures|Sheet metal repair|Composite repair|Wood repair|Fabric repair|Recover fabric control surface|Treat corrosion|Apply protective treatment
+52|Doors|Rig/adjust locking mechanism|Adjust air stair system|Check operation of emergency exits|Test door warning system|Troubleshoot faulty system
+56|Windows|Replace windshield|Replace window|Repair transparency|Rig/adjust latching mechanism
+57|Wings|Skin repair|Recover fabric wing|Replace tip|Replace nb|Check incidence/rig|Inspection of primary structure/spar|Check integral fuel tank
+61|Propeller|Assemble prop after transportation|Replace propeller|Replace governor|Adjust governor|Perform static functional checks|Check operation during ground run|Check track|Check setting of micro switches|Dress out blade damage|Dynamically balance prop|Overhaul governor|Overhaul prop|Troubleshoot faulty system
+62|Main Rotors|Install rotor head assembly|Replace blades|Replace damper assembly|Check track|Check static balance|Check dynamic balance|Troubleshoot
+63|Rotor Drive|Replace mast|Replace drive coupling|Replace clutch/freewheel nut|Replace drive belt|Install main gearbox|Overhaul main gearbox|Check gearbox chip detectors
+64|Tail Rotors|Install rotor assembly|Replace blades|Troubleshoot
+65|Tail Rotor Drive|Replace bevel gearbox|Replace universal joints|Overhaul bevel gearbox|Install drive assembly|Check chip detectors
+67|Rotorcraft Flight Controls|Install swash plate|Install mixing box|Adjust pitch links|Rig collective system|Rig cyclic system|Rig anti-torque system|Check controls for assembly & locking|Check controls for operation & sense|Troubleshoot faulty system
+71|Power Plant|Build up ECU|Replace engine|Replace scat hose|Repair cooling baffles|Repair cowling|Adjust cow flaps|Repair faulty wiring|Troubleshoot
+72P|Piston Engines (72)|Remove/install reduction gear|Overhaul engine|Top overhaul|Check crankshaft run-out|Check tappet clearance|Check compression|Extract broken stud|Install helicoil|Perform ground run|Establish/check reference RPM|Troubleshoot
+72T|Turbine Engines (72)|Replace module|Hot section inspection|Engine ground run|Establish reference power|Trend monitoring/gas path analysis|Troubleshoot
+73P|Fuel & Control, Piston (73)|Replace engine driven pump|Adjust AMC|Adjust ABC|Install carburetor/injector|Adjust carburetor/injector|Clean injector nozzles|Replace primer line|Check carburetor float setting|Troubleshoot faulty system
+73T|Fuel & Control, Turbine (73)|Replace FCU|Replace engine driven pump|Clean/test fuel nozzles|Clean/replace filters|Adjust FCU|Troubleshoot faulty system
+74P|Ignition Systems, Piston (74)|Change magneto|Change ignition vibrator|Change plugs|Test plugs|Check H.T. leads|Install new leads|Check timing|Check system bonding|Troubleshoot faulty system
+74T|Ignition Systems, Turbine (74)|Check glow plugs/ignitors|Check H.T. leads|Check ignition unit|Replace ignition unit|Troubleshoot faulty system
+75|Bleed Air|Inspect/repair engine anti-icing system|Inspect variable stator blades|Troubleshoot faulty system
+76|Engine Controls|Rig thrust lever|Rig RPM control|Rig mixture HP cock lever|Rig power lever|Check control sync (multi-engine)|Check controls for correct assembly & locking|Check controls for range & sense of operation|Adjust pedestal micro-switches|Troubleshoot faulty system
+77|Engine Indicating|Replace engine instrument(s)|Replace oil temperature bulb|Replace thermocouples|Check calibration|Troubleshoot faulty system
+78P|Exhaust, Piston (78)|Replace exhaust gasket|Inspect welded repair|Pressure check cabin heater muff|Troubleshoot faulty system
+78T|Exhaust, Turbine (78)|Change jetpipe|Change shroud assembly|Install trimmers
+79|Oil|Change oil|Check filter(s)|Adjust pressure relief valve|Replace oil tank|Replace oil pump|Replace oil cooler|Replace firewall shut off valve|Perform oil dilution|Troubleshoot faulty system
+80|Starting|Replace starter|Replace start relay|Replace start control valve|Check cranking speed|Troubleshoot faulty system
+81|Turbines, Piston Engines (81)|Replace PRT|Replace turbo-blower|Replace heat shields|Replace waste-gate|Adjust density controller
+82|Engine Water Injection|Replace water/methanol pump|Flow check water/methanol system|Adjust water/methanol control unit|Check fluid for quantity|Troubleshoot faulty system
+83|Accessory Gear Boxes|Replace gearbox|Replace drive shaft|Check chip detector
+S1|“S” Licence: Corrosion Control & Assessment|Remove & treat aluminum alloy corrosion|Remove & treat steel alloy corrosion|Remove & treat magnesium alloy corrosion|Prepare metal surfaces by shot peening|Remove & treat galvanic corrosion|Perform inspection of aircraft structure for corrosion|Perform removal of affected corroded areas by chemical/mechanical methods|Perform measurement of corrosion damage|Perform test of metal composites for corrosion|Perform NDT inspection and interpret results
+S2|“S” Licence: Drawings, Sealing & Fasteners|Interpret information from blueprints|Prepare metal/wood/composite surfaces for sealing|Select/mix and apply sealants to seams, joints & fasteners|Identify fasteners and prepare layout pattern|Drill,  ream & countersink holes|Identify solid rivet types|Perform heat treatment of rivets|Perform rivet installation (set & buck)|Perform installation of special fasteners/swage threadless collars|Perform installation of panel and cowl fasteners|Perform installation of blind bolts/nuts/rivets/rivnuts|Perform installation of threaded fasteners/self & non-self locking fasteners|Remove & install heli-coil
+S3|“S” Licence: Structural Assessment & Design|Perform visual inspection of damaged area|Interpret NDT results|Draw sketch of damaged area & determine required repair|Remove, install & align wing assembly after repair|Remove, repair, balance, install & rig flight control surfaces|Perform sheet metal repair to monocoque/semi-monocoque fuselages|Perform a weld repair to tubular structure|Perform a weld repair to an engine mount
+S4|“S” Licence: Metallurgy & Assembly|Perform heat treatment of ferrous/non ferrous metals|Perform hardness testing of ferrous/non ferrous metals|Install & align parts using jigs/holding fixtures|Install parts maintaining tolerances|Install, trim & fit parts|Perform drilling, reaming & countersinking of holes|Removal, disassembly, reassembly & installation of components & parts to gain access to sheet metal repair|Perform dressing & deburring of repaired areas|Application of corrosion protection|Application of required sealants|Perform bonding/spot weld parts
+S5|“S” Licence: Sheet Metal Structures & Fabrication|Assemble parts using structural fasteners|Remove/fabricate/install and safety flight control cables|Remove old sealant, prepare & apply sealant to “wet wing” fuel tank & pressure test|Remove, repair & install wing leading edge/vertical/horizontal stabilizer surfaces after hail/bird strike damage|Remove, prepare & install de-icing boots|Remove, prepare & install propeller de-icing boots|Repair main/nose landing gear doors|Repair skis/floats|Remove, repair/replace damaged parts|Reinforce/splice/replace structural sheet metal parts|Reinforce/splice/replace forgings and extrusions|Remove & replace rod-end fittings|Repair non-structural cabin interior lining|Perform stop-drilling of small cracks in sheet metal parts|Prepare and install patch to sheet metal skins|Read & interpret technical drawings|Perform layout patterns/templates|Perform cutting of material to size|Form sheet metal with hand/machine tools|Perform cold-working of fastener holes|Perform sawing and routing of sheet metal|Perform fastening of sheet metal with rivets|Perform fastening of sheet metal using bonding process|Perform punch and drilling of sheet metal|Perform dimpling and countersinking of sheet metal
+S6|“S” Licence: Composite Structures|Perform sanding/grinding/routing of damaged area|Prepare damaged area by step/taper sanding|Perform fabrication of pattern for cutting cloth patches|Perform wetting-out of fabric with resin and cut out patches|Perform a lay-up repair ply/plies using wet/pre-preg cloth|Perform curing of repairs at room temperature|Perform curing of repairs with heat blankets/oven|Perform check for delamination|Perform installation of inserts|Perform sanding/priming/painting of repaired surface|Perform fabrication of master model|Perform removal of mould from master model|Perform fabrication of cutting pattern for lay-up plies|Prepare plies for wet/pre-preg lay-up|Prepare mould surface|Perform curing of lay-up with heat blanket/oven/autoclave/room temperature|Perform check for improper bonding|Perform trimming of excess from parts/structures being fabricated|Perform sanding/priming/painting of fabricated parts
+S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Perform repair to fabric covering|Perform recovering of aircraft fabric surfaces|Perform application of dope to aircraft fabric surfaces|Perform application of paint to recovered fabric surfaces|Perform inspection of wood structures|Perform selection of aircraft grade wood|Perform repair/replacement to aircraft wood structure|Perform sealing & refinishing to an aircraft wood structure|Perform lamination of fabric to an aircraft wood structure|Perform application of varnish to an aircraft wood structure|Perform bending of tubing as per drawings/sample|Perform fabrication of flexible hoses and leak test|Perform fabrication of conduits and manifolds|Perform inspection of aircraft windows|Remove & install cockpit windshield/sliding windows/side windows|Perform buffing/polishing of windows`;
+        const C = D.split('\n').map(l => { const p = l.split('|'); return { id: p[0], t: p[1], k: p.slice(2) } });
+        const GR = [['General & Servicing', '05 06 07 08 09 10 11 12 18'], ['Airframe Systems', '21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 45'], ['Airframe Structures', '51 52 56 57'], ['Rotorcraft', '62 63 64 65 67'], ['Powerplant & Propeller', '49 61 71 72P 72T 73P 73T 74P 74T 75 76 77 78P 78T 79 80 81 82 83'], ['“S” Licence Structures', 'S1 S2 S3 S4 S5 S6 S7']];
+        const catOf = c => GR.find(g => g[1].split(' ').includes(c.id))[0];
+        C.sort((a, b) => GR.findIndex(g => g[0] === catOf(a)) - GR.findIndex(g => g[0] === catOf(b)));
+        const isS = c => /^S\d/.test(c.id); let vw = 'all';
+        const inView = c => vw === 'all' || (vw === 'S') === isS(c);
+        const catProg = g => { let a = 0, b = 0; C.forEach(c => { if (catOf(c) === g) c.k.forEach((_, i) => { b++; if ((S.e[c.id + '.' + i] || []).length) a++ }) }); return a + '/' + b };
+        let S = {};
+        S.e = S.e || {};
+        const $ = id => document.getElementById(id);
+        const save = () => { window.onSave && window.onSave() };
+        const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const label = c => /^S\d/.test(c.id) ? c.t : 'ATA ' + c.id.replace(/\D+$/, '') + ' · ' + c.t;
+        let oc = new Set(), ot = new Set();
+        const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') };
+        function render() {
+            const q = $('q').value.trim().toLowerCase(), f = $('f').value; let tot = 0, dn = 0, h = '', lastG = '';
+            C.forEach(c => { if (inView(c)) c.k.forEach((_, i) => { tot++; if ((S.e[c.id + '.' + i] || []).length) dn++ }) });
+            C.forEach(c => {
+                if (!inView(c)) return; const cd = c.k.filter((_, i) => (S.e[c.id + '.' + i] || []).length).length;
+                const rows = c.k.map((t, i) => ({ t, i, k: c.id + '.' + i })).filter(r => {
+                    const n = (S.e[r.k] || []).length;
+                    if (f === 'no' && n) return false; if (f === 'yes' && !n) return false;
+                    return !q || r.t.toLowerCase().includes(q) || label(c).toLowerCase().includes(q)
+                });
+                if (!rows.length) return; const gn = catOf(c); if (gn !== lastG) { lastG = gn; h += `<h2 class="cat"><span>${esc(gn)}</span><span>${catProg(gn)}</span></h2>` }
+                const op = oc.has(c.id) || q || f !== 'all';
+                h += `<div class="ch"><button onclick="tc('${c.id}')"><b>${esc(label(c))}</b><span class="bar mini"><i style="width:${cd / c.k.length * 100}%"></i></span><span class="cnt">${cd}/${c.k.length}</span></button>`;
+                if (op) rows.forEach(r => {
+                    const es = S.e[r.k] || [], o = ot.has(r.k);
+                    h += `<div class="t ${es.length ? 'done' : ''}"><button onclick="tt('${r.k}')"><span class="dot">${es.length ? '✓' : ''}</span><span class="n">${esc(r.t)}</span>${es.length ? `<span class="badge">${es.length}</span>` : ''}</button>`;
+                    if (o) {
+                        h += `<div class="panel">` + es.map((e, j) => `<div class="ent"><div><b>${esc(e.d)}</b> · ${esc(e.t)} · ${esc(e.r)}<small>${esc(e.a)} ${esc(e.l)}${e.n ? ' — ' + esc(e.n) : ''}</small></div><button onclick="del('${r.k}',${j})" aria-label="Delete entry">✕</button></div>`).join('') +
+                            `<div class="form"><label>Date<input type="date" id="d_${r.k}" value="${today()}"></label><label>A/C type<input id="t_${r.k}" placeholder="DHC-8-400"></label><label>Registration<input id="r_${r.k}" placeholder="C-XXXX"></label><label>AME licence no.<input id="l_${r.k}" placeholder="M123456"></label><label class="w">AME name / signature<input id="a_${r.k}"></label><label class="w">Notes (work order, task card…)<input id="n_${r.k}"></label><button class="p w" onclick="add('${r.k}')">Log task</button></div></div>`
+                    }
+                    h += '</div>'
+                });
+                h += '</div>'
+            });
+            $('list').innerHTML = h || '<p class="sub">No matching tasks.</p>';
+            $('tot').textContent = dn + ' / ' + tot + ' tasks logged'; $('pb').style.width = (tot ? dn / tot * 100 : 0) + '%'; dash();
+        }
+        function tc(id) { oc.has(id) ? oc.delete(id) : oc.add(id); render() }
+        function tt(k) { ot.has(k) ? ot.delete(k) : ot.add(k); render() }
+        function add(k) {
+            const g = p => $(p + '_' + k).value.trim(), d = g('d');
+            if (!d) { $('d_' + k).focus(); return }
+            (S.e[k] = S.e[k] || []).push({ d, t: g('t'), r: g('r'), a: g('a'), l: g('l'), n: g('n') });
+            save(); render()
+        }
+        function del(k, j) { if (!confirm('Delete this entry?')) return; S.e[k].splice(j, 1); if (!S.e[k].length) delete S.e[k]; save(); render() }
+        $('q').oninput = render; $('f').onchange = render;
+        const REQ = { M: { tot: 48, sp: 12, ci: 6, ex: ['SPM Standard Practices (M)', 'AF Airframe', 'PP Power Plant', 'Regulations'] }, E: { tot: 48, sp: 12, ci: 6, ex: ['SPE Standard Practices (E)', 'AV Avionics', 'Regulations'] }, S: { tot: 36, sp: 24, ci: 6, ex: ['SPS Standard Practices (S)', 'ST Structures', 'Regulations'] } };
+        function dash() {
+            const tg = S.tg || 'M1', k = tg === 'S' ? 'S' : tg === 'E' ? 'E' : 'M', R = REQ[k], H = S.h || [];
+            const sum = f => H.filter(f).reduce((a, x) => a + x.h, 0);
+            const cap = f => { const o = {}; H.filter(f).forEach(x => alloc(x, o)); return Object.values(o).reduce((a, v) => a + Math.min(v, 150), 0) };
+            const raw = sum(() => 1), T = cap(() => 1) + (+S.cr || 0) * 150, SP = cap(x => x.s), CI = cap(x => x.c), lost = raw - cap(() => 1);
+            let a = 0, b = 0; C.forEach(c => { if (isS(c) === (k === 'S')) c.k.forEach((_, i) => { b++; if ((S.e[c.id + '.' + i] || []).length) a++ }) });
+            const P = (v, r) => Math.min(1, v / (r * 150)), ps = [b ? a / b : 0, P(T, R.tot), P(SP, R.sp), P(CI, R.ci)], ov = ps.reduce((x, y) => x + y) / 4;
+            const left = Math.max(R.tot * 150 - T, R.sp * 150 - SP, R.ci * 150 - CI, 0), n = v => Math.round(v).toLocaleString();
+            const m = (l, p, s) => `<div class="m"><div class="mh"><span>${l}</span><b>${Math.round(p * 100)}%</b></div><div class="bar"><i style="width:${p * 100}%"></i></div><small>${s}</small></div>`;
+            $('dm').innerHTML = `<div class="grid">` + m('Overall', ov, 'average of the four below') + m('Tasks logged', ps[0], a + ' / ' + b + ' tasks') + m('Total experience', ps[1], n(T) + ' / ' + n(R.tot * 150) + ' h') + m('Specialty', ps[2], n(SP) + ' / ' + n(R.sp * 150) + ' h') + m('Civil', ps[3], n(CI) + ' / ' + n(R.ci * 150) + ' h') + `</div><p class="sub">≈ ${(left / 150).toFixed(1)} months of full-time work left (hours = months × 150, i.e. 1,800 h/yr as TC assumes). Only 150 h per calendar month count toward experience.${lost > 0 ? ' ' + n(lost) + ' h over that cap aren’t counted.' : ''}${k === 'E' ? ' E-rating skill tasks aren’t in the logbook pages you shared, so task % uses the ATA task list.' : ''}</p><b style="font-size:13px">Exams passed${S.ab ? ' (technical exams are covered by your approved training)' : ''}</b><div class="row">` + (S.ab ? ['Regulations'] : R.ex).map(e => `<label class="ck"><input type="checkbox" ${(S.x || {})[k + e] ? 'checked' : ''} onchange="ex('${k + e}')"> ${esc(e)}</label>`).join('') + `</div>`;
+            $('hl').innerHTML = H.map((x, j) => `<div class="ent"><div><input type="number" value="${x.h}" min="0" step="0.5" style="width:70px" onchange="hedit(${j},this.value)" aria-label="Hours"> h · ${esc(x.st || x.d)}${x.en && x.en !== x.st ? ' → ' + esc(x.en) : ''}${x.s ? ' · specialty' : ''}${x.c ? ' · civil' : ''}<small>${esc(x.n)}</small></div><button onclick="hdel(${j})" aria-label="Delete">✕</button></div>`).join('');
+        }
+        function alloc(x, o) { const s = x.st || x.d, e = x.en || s; if (!s) { o[''] = (o[''] || 0) + x.h; return } const a = new Date(s + 'T12:00:00'), b = new Date(e + 'T12:00:00'), n = Math.max(1, Math.round((b - a) / 864e5) + 1), r = x.h / n; for (let i = 0; i < n; i++) { const d = new Date(a.getTime() + i * 864e5), m = d.getFullYear() + '-' + (d.getMonth() + 1); o[m] = (o[m] || 0) + r } }
+        function hedit(j, v) { S.h[j].h = Math.max(0, +v || 0); save(); dash() }
+        function hdel(j) { if (!confirm('Delete this entry?')) return; S.h.splice(j, 1); save(); dash() }
+        function ex(n) { S.x = S.x || {}; S.x[n] = !S.x[n]; save(); dash() }
+        $('tg').value = S.tg || 'M1'; $('ab').checked = !!S.ab; $('cr').value = S.cr || 0; $('hd').value = today();
+        $('tg').onchange = () => { S.tg = $('tg').value; save(); dash() };
+        $('ab').onchange = () => { S.ab = $('ab').checked; save(); dash() };
+        $('cr').oninput = () => { S.cr = Math.max(0, +$('cr').value || 0); save(); dash() };
+        let hman = false; $('hw').value = S.hw || 40;
+        const calc = () => { const s = $('hd').value; if (!s || hman) return; const a = new Date(s + 'T12:00:00'), b = new Date(($('he').value || s) + 'T12:00:00'), n = Math.max(1, Math.round((b - a) / 864e5) + 1); $('hh').value = Math.round(n * (+$('hw').value || 40) / 7) };
+        ['hd', 'he', 'hw'].forEach(i => $(i).oninput = () => { hman = false; calc() });
+        $('hh').oninput = () => { hman = true };
+        $('ha').onclick = () => { const h = +$('hh').value, a = $('hd').value; if (!a) { $('hd').focus(); return } if (!(h > 0)) { $('hh').focus(); return } S.hw = +$('hw').value || 40; (S.h = S.h || []).push({ st: a, en: $('he').value || a, h, s: $('hs').checked, c: $('hc').checked, n: $('hn').value.trim() }); $('hh').value = ''; $('hd').value = ''; $('he').value = ''; $('hn').value = ''; hman = false; save(); dash() };
+        document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { vw = b.dataset.v; document.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('on', x === b)); render() });
+        $('bk').onclick = () => { const b = $('bkp'); b.classList.toggle('hide'); if (!b.classList.contains('hide')) $('ta').value = JSON.stringify(S) };
+        $('cp').onclick = () => { $('ta').value = JSON.stringify(S); $('ta').classList.remove('hide'); $('im').classList.remove('hide'); $('ta').focus(); $('ta').select(); try { document.execCommand('copy') } catch (e) { } };
+        $('sv').onclick = async () => { const data = JSON.stringify(S), name = 'my-AME-logbook-' + today() + '.json'; let d = null; try { d = window.claude && await claude.use('downloads') } catch (e) { } if (d) { try { await d.save({ filename: name, data }) } catch (e) { } return } try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' })); a.download = name; a.click() } catch (e) { } $('ta').value = data };
+        $('lf').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { $('ta').value = r.result; $('im').click() }; r.readAsText(f) };
+        $('im').onclick = () => { try { const o = JSON.parse($('ta').value); if (!o || typeof o !== 'object' || Array.isArray(o)) throw 0; if (!confirm('Loading this will replace what is currently in the tracker. Continue?')) return; S = o.e && typeof o.e === 'object' ? o : { e: o }; S.e = S.e || {}; S.h = Array.isArray(S.h) ? S.h : []; save(); render(); $('tg').value = S.tg || 'M1'; $('cr').value = S.cr || 0; $('ab').checked = !!S.ab; alert('Your logbook was loaded.') } catch (e) { alert('That doesn’t look like a logbook saved from this tracker.') } };
+        window.api = { get: () => S, set: o => { S = o && typeof o === 'object' ? o : {}; S.e = S.e || {}; S.h = Array.isArray(S.h) ? S.h : []; $('tg').value = S.tg || 'M1'; $('cr').value = S.cr || 0; $('ab').checked = !!S.ab; $('hw').value = S.hw || 40; oc.clear(); ot.clear(); render() } };
+        render();
+    </script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        // STEP 1: paste your Firebase web-app config here (Firebase console > Project settings > Your apps > Web app)
+        const cfg = { apiKey: 'PASTE_API_KEY', authDomain: 'PASTE_PROJECT_ID.firebaseapp.com', projectId: 'PASTE_PROJECT_ID', appId: 'PASTE_APP_ID' };
+
+        const $ = id => document.getElementById(id);
+        const msg = t => { $('am').textContent = t };
+        //#pack-start
+        // Compact storage: arrays instead of objects, defaults dropped, then gzip -> one short string per user.
+        const tr = a => { while (a.length && (a[a.length - 1] === '' || a[a.length - 1] == null)) a.pop(); return a };
+        function pack(S) {
+            const e = {}; for (const k in S.e) if (S.e[k].length) e[k] = S.e[k].map(x => tr([x.d || '', x.t || '', x.r || '', x.a || '', x.l || '', x.n || '']));
+            return { v: 1, e, h: (S.h || []).map(x => tr([x.st || x.d || '', x.en || '', x.h, (x.s ? 1 : 0) | (x.c ? 2 : 0), x.n || ''])), g: S.tg, c: S.cr || 0, b: S.ab ? 1 : 0, w: S.hw || 40, x: Object.keys(S.x || {}).filter(k => S.x[k]) }
+        }
+        function unpack(p) {
+            const S = { e: {}, h: [], x: {} }; if (!p || !p.v) return S;
+            for (const k in p.e) S.e[k] = p.e[k].map(a => ({ d: a[0] || '', t: a[1] || '', r: a[2] || '', a: a[3] || '', l: a[4] || '', n: a[5] || '' }));
+            S.h = (p.h || []).map(a => ({ st: a[0], en: a[1] || a[0], h: +a[2] || 0, s: !!(a[3] & 1), c: !!(a[3] & 2), n: a[4] || '' }));
+            S.tg = p.g || 'M1'; S.cr = p.c || 0; S.ab = !!p.b; S.hw = p.w || 40; (p.x || []).forEach(k => S.x[k] = true); return S
+        }
+        const b64 = u => { let s = ''; for (let i = 0; i < u.length; i += 8192)s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(s) };
+        async function enc(j) { if (!globalThis.CompressionStream) return 'j:' + j; const buf = await new Response(new Blob([j]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer(); const z = 'z:' + b64(new Uint8Array(buf)); return z.length < j.length ? z : 'j:' + j }
+        async function dec(s) { if (!s) return null; if (s[0] === 'j') return JSON.parse(s.slice(2)); const bin = Uint8Array.from(atob(s.slice(2)), c => c.charCodeAt(0)); return JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text()) }
+        //#pack-end
+
+        if (cfg.apiKey.startsWith('PASTE')) { msg('Setup needed: paste your Firebase config at the top of the script in this file.'); $('ag').disabled = $('ac').disabled = true }
+        else {
+            const app = initializeApp(cfg), auth = getAuth(app), db = initializeFirestore(app, { localCache: persistentLocalCache() });
+            const em = u => u.trim().toLowerCase() + '@ame-logbook.app';
+            const bad = u => !/^[a-z0-9._-]{3,20}$/i.test(u.trim());
+            let uid = null, loaded = false, lastJ = '', tm = null;
+            const stat = t => { $('sync').textContent = t };
+            // Saves are batched: one write ~2s after the last change, skipped if nothing changed.
+            window.onSave = () => { if (!loaded) return; stat('Saving…'); clearTimeout(tm); tm = setTimeout(flush, 2000) };
+            async function flush() {
+                clearTimeout(tm); if (!uid || !loaded) return; const j = JSON.stringify(pack(api.get())); if (j === lastJ) { stat('Saved ✓'); return }
+                try { await setDoc(doc(db, 'users', uid), { d: await enc(j), t: Date.now() }); lastJ = j; stat('Saved ✓') } catch (e) { stat('Couldn’t save. Check your connection.') }
+            }
+            document.addEventListener('visibilitychange', () => { if (document.hidden) flush() }); addEventListener('pagehide', flush);
+            const errs = { 'auth/email-already-in-use': 'That username is taken. Try another.', 'auth/invalid-credential': 'Wrong username or password.', 'auth/user-not-found': 'Wrong username or password.', 'auth/wrong-password': 'Wrong username or password.', 'auth/weak-password': 'Password must be at least 6 characters.', 'auth/network-request-failed': 'No connection. Try again.', 'auth/too-many-requests': 'Too many tries. Wait a minute and try again.', 'auth/operation-not-allowed': 'Email/Password sign-in is not enabled in Firebase yet.' };
+            async function go(create) {
+                const u = $('au').value, p = $('ap').value; msg('');
+                if (bad(u)) return msg('Username: 3–20 letters, numbers, dot, dash or underscore.');
+                if (p.length < 6) return msg('Password must be at least 6 characters.');
+                $('ag').disabled = $('ac').disabled = true;
+                try { await (create ? createUserWithEmailAndPassword : signInWithEmailAndPassword)(auth, em(u), p) } catch (e) { msg(errs[e.code] || 'Something went wrong. Try again.') }
+                $('ag').disabled = $('ac').disabled = false
+            }
+            $('ag').onclick = () => go(false); $('ac').onclick = () => go(true);
+            $('ap').onkeydown = e => { if (e.key === 'Enter') go(false) };
+            $('so').onclick = async () => { await flush(); await signOut(auth) };
+            // One read per sign-in, no live listeners.
+            onAuthStateChanged(auth, async u => {
+                if (!u) { uid = null; loaded = false; lastJ = ''; api.set({}); $('ap').value = ''; $('auth').classList.remove('hide'); $('app').classList.add('hide'); return }
+                let S0; try { const s = await getDoc(doc(db, 'users', u.uid)); S0 = s.exists() ? unpack(await dec(s.data().d)) : unpack(null) }
+                catch (e) { msg('Couldn’t load your logbook. Check your connection and try again.'); await signOut(auth); return }
+                uid = u.uid; api.set(S0); lastJ = JSON.stringify(pack(api.get())); loaded = true;
+                $('who').textContent = u.email.split('@')[0]; stat('Saved ✓'); $('auth').classList.add('hide'); $('app').classList.remove('hide'); window.scrollTo(0, 0)
+            });
+        }
+    </script>
+</body>
+
+</html>
