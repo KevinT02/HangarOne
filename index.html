@@ -14,43 +14,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>AME Apprentice Logbook Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f6f7f9;
-            --fg: #14181f;
-            --mut: #5d6675;
+            --bg: #eef4ff;
+            --fg: #0b1f44;
+            --mut: #5b6b8c;
             --card: #fff;
-            --bd: #dde1e8;
-            --ac: #c8102e;
-            --ok: #1b7f4b;
+            --bd: #d6e2f7;
+            --ac: #1f6feb;
+            --ok: #2563eb;
             box-sizing: border-box;
             padding-top: env(safe-area-inset-top, 0px);
             padding-bottom: env(safe-area-inset-bottom, 0px);
             color-scheme: light
-        }
-
-        @media (prefers-color-scheme:dark) {
-            :root:not([data-theme="light"]) {
-                --bg: #101319;
-                --fg: #e8ebf0;
-                --mut: #98a2b3;
-                --card: #181c24;
-                --bd: #2a303b;
-                --ac: #ff5a6e;
-                --ok: #4cc38a;
-                color-scheme: dark
-            }
-        }
-
-        :root[data-theme="dark"] {
-            --bg: #101319;
-            --fg: #e8ebf0;
-            --mut: #98a2b3;
-            --card: #181c24;
-            --bd: #2a303b;
-            --ac: #ff5a6e;
-            --ok: #4cc38a;
-            color-scheme: dark
         }
 
         html {
@@ -378,6 +355,149 @@
             margin: 6px 0
         }
 
+        body {
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(180deg, #e3eeff 0, #f7faff 360px, #fff 100%) fixed
+        }
+
+        main>h1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #2f80ff, #0b3a8f);
+            color: #fff;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 21px;
+            margin: 0 0 12px;
+            box-shadow: 0 8px 24px rgba(31, 111, 235, .25)
+        }
+
+        .logo {
+            display: inline-grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            color: #1f6feb;
+            font-size: 20px;
+            flex: none
+        }
+
+        .logo.big {
+            width: 56px;
+            height: 56px;
+            font-size: 28px;
+            margin: 0 auto 8px;
+            background: linear-gradient(135deg, #2f80ff, #0b3a8f);
+            color: #fff
+        }
+
+        .top,
+        .ch,
+        .authbox {
+            border-color: #d6e2f7;
+            box-shadow: 0 2px 12px rgba(31, 111, 235, .08)
+        }
+
+        .authbox {
+            text-align: center;
+            margin-top: 10vh;
+            border-radius: 18px
+        }
+
+        .authbox h1 {
+            color: #0b3a8f;
+            font-size: 24px;
+            margin: 0 0 4px
+        }
+
+        .authbox .row {
+            justify-content: center
+        }
+
+        .authbox input {
+            text-align: center
+        }
+
+        .bar {
+            background: #e3ecfb
+        }
+
+        .bar i {
+            background: linear-gradient(90deg, #60a5fa, #1f6feb)
+        }
+
+        button {
+            transition: border-color .15s, box-shadow .15s
+        }
+
+        button:hover {
+            border-color: #1f6feb
+        }
+
+        button.p {
+            background: linear-gradient(135deg, #2f80ff, #1558d6);
+            border: 0;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(31, 111, 235, .3)
+        }
+
+        .tabs button {
+            border-radius: 999px;
+            padding: 8px 16px
+        }
+
+        .tabs button.on {
+            background: #1f6feb;
+            border-color: #1f6feb;
+            color: #fff
+        }
+
+        .dot {
+            border-color: #b8cdf0
+        }
+
+        .done .dot {
+            background: #1f6feb;
+            border-color: #1f6feb
+        }
+
+        h2.cat {
+            color: #1f6feb
+        }
+
+        .ch>button b {
+            color: #0b3a8f
+        }
+
+        .m {
+            background: #f5f9ff;
+            border-color: #d6e2f7
+        }
+
+        .panel {
+            background: #f5f9ff
+        }
+
+        .badge {
+            background: #e8f1ff;
+            border-color: #c7dcfb;
+            color: #1f6feb
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid #93c0ff;
+            border-color: #1f6feb
+        }
+
+        #am {
+            color: #c62828
+        }
+
         .hide {
             display: none
         }
@@ -386,6 +506,7 @@
 
 <body>
     <div id="auth" class="authbox">
+        <div class="logo big">✈︎</div>
         <h1>AME Logbook</h1>
         <p class="sub">Sign in to open your private logbook. No email needed.</p><input id="au" placeholder="Username"
             autocomplete="username" autocapitalize="none" autocorrect="off"><input id="ap" type="password"
@@ -396,7 +517,7 @@
             logbook from the Save / restore button.</p>
     </div>
     <main id="app" class="hide">
-        <h1>AME Apprentice Logbook Tracker</h1>
+        <h1><span class="logo">✈︎</span>AME Apprentice Logbook</h1>
         <div class="row" style="margin:0 0 6px;align-items:center;justify-content:space-between"><span class="sub"
                 style="margin:0">Signed in as <b id="who"></b> · <span id="sync"></span></span><button id="so">Sign
                 out</button></div>
@@ -557,7 +678,7 @@ S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Per
                     h += `<div class="t ${es.length ? 'done' : ''}"><button onclick="tt('${r.k}')"><span class="dot">${es.length ? '✓' : ''}</span><span class="n">${esc(r.t)}</span>${es.length ? `<span class="badge">${es.length}</span>` : ''}</button>`;
                     if (o) {
                         h += `<div class="panel">` + es.map((e, j) => `<div class="ent"><div><b>${esc(e.d)}</b> · ${esc(e.t)} · ${esc(e.r)}<small>${esc(e.a)} ${esc(e.l)}${e.n ? ' — ' + esc(e.n) : ''}</small></div><button onclick="del('${r.k}',${j})" aria-label="Delete entry">✕</button></div>`).join('') +
-                            `<div class="form"><label>Date<input type="date" id="d_${r.k}" value="${today()}"></label><label>A/C type<input id="t_${r.k}" placeholder="DHC-8-400"></label><label>Registration<input id="r_${r.k}" placeholder="C-XXXX"></label><label>AME licence no.<input id="l_${r.k}" placeholder="M123456"></label><label class="w">AME name / signature<input id="a_${r.k}"></label><label class="w">Notes (work order, task card…)<input id="n_${r.k}"></label><button class="p w" onclick="add('${r.k}')">Log task</button></div></div>`
+                        `<div class="form"><label>Date<input type="date" id="d_${r.k}" value="${today()}"></label><label>A/C type<input id="t_${r.k}" placeholder="DHC-8-400"></label><label>Registration<input id="r_${r.k}" placeholder="C-XXXX"></label><label>AME licence no.<input id="l_${r.k}" placeholder="M123456"></label><label class="w">AME name / signature<input id="a_${r.k}"></label><label class="w">Notes (work order, task card…)<input id="n_${r.k}"></label><button class="p w" onclick="add('${r.k}')">Log task</button></div></div>`
                     }
                     h += '</div>'
                 });
