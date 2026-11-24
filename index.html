@@ -678,7 +678,7 @@ S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Per
                     h += `<div class="t ${es.length ? 'done' : ''}"><button onclick="tt('${r.k}')"><span class="dot">${es.length ? '✓' : ''}</span><span class="n">${esc(r.t)}</span>${es.length ? `<span class="badge">${es.length}</span>` : ''}</button>`;
                     if (o) {
                         h += `<div class="panel">` + es.map((e, j) => `<div class="ent"><div><b>${esc(e.d)}</b> · ${esc(e.t)} · ${esc(e.r)}<small>${esc(e.a)} ${esc(e.l)}${e.n ? ' — ' + esc(e.n) : ''}</small></div><button onclick="del('${r.k}',${j})" aria-label="Delete entry">✕</button></div>`).join('') +
-                        `<div class="form"><label>Date<input type="date" id="d_${r.k}" value="${today()}"></label><label>A/C type<input id="t_${r.k}" placeholder="DHC-8-400"></label><label>Registration<input id="r_${r.k}" placeholder="C-XXXX"></label><label>AME licence no.<input id="l_${r.k}" placeholder="M123456"></label><label class="w">AME name / signature<input id="a_${r.k}"></label><label class="w">Notes (work order, task card…)<input id="n_${r.k}"></label><button class="p w" onclick="add('${r.k}')">Log task</button></div></div>`
+                            `<div class="form"><label>Date<input type="date" id="d_${r.k}" value="${today()}"></label><label>A/C type<input id="t_${r.k}" placeholder="DHC-8-400"></label><label>Registration<input id="r_${r.k}" placeholder="C-XXXX"></label><label>AME licence no.<input id="l_${r.k}" placeholder="M123456"></label><label class="w">AME name / signature<input id="a_${r.k}"></label><label class="w">Notes (work order, task card…)<input id="n_${r.k}"></label><button class="p w" onclick="add('${r.k}')">Log task</button></div></div>`
                     }
                     h += '</div>'
                 });
@@ -699,7 +699,7 @@ S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Per
         $('q').oninput = render; $('f').onchange = render;
         const REQ = { M: { tot: 48, sp: 12, ci: 6, ex: ['SPM Standard Practices (M)', 'AF Airframe', 'PP Power Plant', 'Regulations'] }, E: { tot: 48, sp: 12, ci: 6, ex: ['SPE Standard Practices (E)', 'AV Avionics', 'Regulations'] }, S: { tot: 36, sp: 24, ci: 6, ex: ['SPS Standard Practices (S)', 'ST Structures', 'Regulations'] } };
         function dash() {
-            const tg = S.tg || 'M1', k = tg === 'S' ? 'S' : tg === 'E' ? 'E' : 'M', R = REQ[k], H = S.h || [];
+            const tg = S.tg || 'M1', k = tg === 'S' ? 'S' : tg === 'E' ? 'E' : 'M', R = REQ[k], H = (S.h || []).map(eff);
             const sum = f => H.filter(f).reduce((a, x) => a + x.h, 0);
             const cap = f => { const o = {}; H.filter(f).forEach(x => alloc(x, o)); return Object.values(o).reduce((a, v) => a + Math.min(v, 150), 0) };
             const raw = sum(() => 1), T = cap(() => 1) + (+S.cr || 0) * 150, SP = cap(x => x.s), CI = cap(x => x.c), lost = raw - cap(() => 1);
@@ -708,21 +708,24 @@ S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Per
             const left = Math.max(R.tot * 150 - T, R.sp * 150 - SP, R.ci * 150 - CI, 0), n = v => Math.round(v).toLocaleString();
             const m = (l, p, s) => `<div class="m"><div class="mh"><span>${l}</span><b>${Math.round(p * 100)}%</b></div><div class="bar"><i style="width:${p * 100}%"></i></div><small>${s}</small></div>`;
             $('dm').innerHTML = `<div class="grid">` + m('Overall', ov, 'average of the four below') + m('Tasks logged', ps[0], a + ' / ' + b + ' tasks') + m('Total experience', ps[1], n(T) + ' / ' + n(R.tot * 150) + ' h') + m('Specialty', ps[2], n(SP) + ' / ' + n(R.sp * 150) + ' h') + m('Civil', ps[3], n(CI) + ' / ' + n(R.ci * 150) + ' h') + `</div><p class="sub">≈ ${(left / 150).toFixed(1)} months of full-time work left (hours = months × 150, i.e. 1,800 h/yr as TC assumes). Only 150 h per calendar month count toward experience.${lost > 0 ? ' ' + n(lost) + ' h over that cap aren’t counted.' : ''}${k === 'E' ? ' E-rating skill tasks aren’t in the logbook pages you shared, so task % uses the ATA task list.' : ''}</p><b style="font-size:13px">Exams passed${S.ab ? ' (technical exams are covered by your approved training)' : ''}</b><div class="row">` + (S.ab ? ['Regulations'] : R.ex).map(e => `<label class="ck"><input type="checkbox" ${(S.x || {})[k + e] ? 'checked' : ''} onchange="ex('${k + e}')"> ${esc(e)}</label>`).join('') + `</div>`;
-            $('hl').innerHTML = H.map((x, j) => `<div class="ent"><div><input type="number" value="${x.h}" min="0" step="0.5" style="width:70px" onchange="hedit(${j},this.value)" aria-label="Hours"> h · ${esc(x.st || x.d)}${x.en && x.en !== x.st ? ' → ' + esc(x.en) : ''}${x.s ? ' · specialty' : ''}${x.c ? ' · civil' : ''}<small>${esc(x.n)}</small></div><button onclick="hdel(${j})" aria-label="Delete">✕</button></div>`).join('');
+            $('hl').innerHTML = H.map((x, j) => `<div class="ent"><div><input type="number" value="${x.h}" min="0" step="0.5" style="width:70px" onchange="hedit(${j},this.value)" aria-label="Hours"> h · ${esc(x.st || x.d)}${x.pr ? ' → Present' : (x.en && x.en !== x.st ? ' → ' + esc(x.en) : '')}${x.s ? ' · specialty' : ''}${x.c ? ' · civil' : ''}<small>${esc(x.n)}</small></div><button onclick="hdel(${j})" aria-label="Delete">✕</button></div>`).join('');
         }
+        const days = (a, b) => Math.max(1, Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5) + 1);
+        const eff = x => x.en === 'P' ? { ...x, pr: 1, en: today(), h: Math.round(days(x.st, today()) * x.h / 7) } : x;
         function alloc(x, o) { const s = x.st || x.d, e = x.en || s; if (!s) { o[''] = (o[''] || 0) + x.h; return } const a = new Date(s + 'T12:00:00'), b = new Date(e + 'T12:00:00'), n = Math.max(1, Math.round((b - a) / 864e5) + 1), r = x.h / n; for (let i = 0; i < n; i++) { const d = new Date(a.getTime() + i * 864e5), m = d.getFullYear() + '-' + (d.getMonth() + 1); o[m] = (o[m] || 0) + r } }
-        function hedit(j, v) { S.h[j].h = Math.max(0, +v || 0); save(); dash() }
+        function hedit(j, v) { const x = S.h[j]; v = Math.max(0, +v || 0); x.h = x.en === 'P' ? Math.max(1, v / days(x.st, today()) * 7) : v; save(); dash() }
         function hdel(j) { if (!confirm('Delete this entry?')) return; S.h.splice(j, 1); save(); dash() }
         function ex(n) { S.x = S.x || {}; S.x[n] = !S.x[n]; save(); dash() }
         $('tg').value = S.tg || 'M1'; $('ab').checked = !!S.ab; $('cr').value = S.cr || 0; $('hd').value = today();
         $('tg').onchange = () => { S.tg = $('tg').value; save(); dash() };
         $('ab').onchange = () => { S.ab = $('ab').checked; save(); dash() };
         $('cr').oninput = () => { S.cr = Math.max(0, +$('cr').value || 0); save(); dash() };
+        $('he').closest('label').insertAdjacentHTML('afterend', '<label class="ck"><input type="checkbox" id="hp"> Present (still working here)</label>');
         let hman = false; $('hw').value = S.hw || 40;
-        const calc = () => { const s = $('hd').value; if (!s || hman) return; const a = new Date(s + 'T12:00:00'), b = new Date(($('he').value || s) + 'T12:00:00'), n = Math.max(1, Math.round((b - a) / 864e5) + 1); $('hh').value = Math.round(n * (+$('hw').value || 40) / 7) };
-        ['hd', 'he', 'hw'].forEach(i => $(i).oninput = () => { hman = false; calc() });
+        const calc = () => { const s = $('hd').value; if (!s || hman) return; const a = new Date(s + 'T12:00:00'), b = new Date(($('hp').checked ? today() : $('he').value || s) + 'T12:00:00'), n = Math.max(1, Math.round((b - a) / 864e5) + 1); $('hh').value = Math.round(n * (+$('hw').value || 40) / 7) };
+        ['hd', 'he', 'hw', 'hp'].forEach(i => $(i).oninput = () => { hman = false; calc() });
         $('hh').oninput = () => { hman = true };
-        $('ha').onclick = () => { const h = +$('hh').value, a = $('hd').value; if (!a) { $('hd').focus(); return } if (!(h > 0)) { $('hh').focus(); return } S.hw = +$('hw').value || 40; (S.h = S.h || []).push({ st: a, en: $('he').value || a, h, s: $('hs').checked, c: $('hc').checked, n: $('hn').value.trim() }); $('hh').value = ''; $('hd').value = ''; $('he').value = ''; $('hn').value = ''; hman = false; save(); dash() };
+        $('ha').onclick = () => { const h = +$('hh').value, a = $('hd').value, pres = $('hp').checked; if (!a) { $('hd').focus(); return } if (!(h > 0)) { $('hh').focus(); return } S.hw = +$('hw').value || 40; (S.h = S.h || []).push({ st: a, en: pres ? 'P' : ($('he').value || a), h: pres ? (+$('hw').value || 40) : h, s: $('hs').checked, c: $('hc').checked, n: $('hn').value.trim() }); $('hh').value = ''; $('hd').value = ''; $('he').value = ''; $('hn').value = ''; $('hp').checked = false; hman = false; save(); dash() };
         document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { vw = b.dataset.v; document.querySelectorAll('[data-v]').forEach(x => x.classList.toggle('on', x === b)); render() });
         $('bk').onclick = () => { const b = $('bkp'); b.classList.toggle('hide'); if (!b.classList.contains('hide')) $('ta').value = JSON.stringify(S) };
         $('cp').onclick = () => { $('ta').value = JSON.stringify(S); $('ta').classList.remove('hide'); $('im').classList.remove('hide'); $('ta').focus(); $('ta').select(); try { document.execCommand('copy') } catch (e) { } };
