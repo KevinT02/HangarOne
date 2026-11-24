@@ -616,8 +616,8 @@ S7|“S” Licence: Fabric, Wood, Fluid Lines & Windows|Perform fabric tests|Per
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
         import { initializeFirestore, persistentLocalCache, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-        // STEP 1: paste your Firebase web-app config here (Firebase console > Project settings > Your apps > Web app)
-        const cfg = { apiKey: 'PASTE_API_KEY', authDomain: 'PASTE_PROJECT_ID.firebaseapp.com', projectId: 'PASTE_PROJECT_ID', appId: 'PASTE_APP_ID' };
+        // Firebase web-app config (safe to be public; your Firestore rules protect the data)
+        const cfg = { apiKey: "AIzaSyAEf5_o81cSzfjztn4uA1Yej4q3-Ze0I7o", authDomain: "hangarone-a1d2b.firebaseapp.com", projectId: "hangarone-a1d2b", storageBucket: "hangarone-a1d2b.firebasestorage.app", messagingSenderId: "5509794240", appId: "1:5509794240:web:9487b3304e4c85624ce025", measurementId: "G-VHJVZ71M3P" };
 
         const $ = id => document.getElementById(id);
         const msg = t => { $('am').textContent = t };
